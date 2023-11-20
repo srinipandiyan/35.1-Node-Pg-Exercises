@@ -26,6 +26,38 @@ router.get("/", async function (req, res, next) {
  * If the company given cannot be found, this should return a 404 status response.
 */
 
+router.get("/:code", async function (req, res, next) {
+    try {
+        const code = req.params.code;
+
+        const companyQuery = await db.query(
+            `SELECT code, name, description 
+            FROM companies
+            WHERE code = $1`,
+            [code]
+        );
+
+        const invoiceQuery = await db.query(
+            `SELECT id
+            FROM invoices
+            WHERE comp_code = $1`,
+            [code]
+        );
+
+        if(!companyQuery.rows.length){
+            throw new ExpressError(`Invalid company: ${code}`, 404)
+        }
+    
+        const company = companyQuery.rows[0];
+        const invoices = invoiceQuery.rows;
+    
+        company.invoices = invoices.map(invoices => invoices.id);
+    
+        return res.json({"company": company});
+    } catch (err) {
+        return next(err);
+    }
+})
 /**
  * POST /companies : Adds a company. Needs to be given JSON like: {code, name, description}
  * Returns obj of new company:  {company: {code, name, description}}
