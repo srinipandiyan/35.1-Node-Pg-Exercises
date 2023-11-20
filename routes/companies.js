@@ -17,6 +17,7 @@ router.get("/", async function (req, res, next) {
         );
 
         return res.json({"companies": query.rows});
+
     } catch (err) {
         return next(err)
     }
@@ -55,6 +56,7 @@ router.get("/:code", async function (req, res, next) {
         company.invoices = invoices.map(invoices => invoices.id);
     
         return res.json({"company": company});
+
     } catch (err) {
         return next(err);
     }
@@ -104,6 +106,7 @@ router.put("/:code", async function (req, res, next) {
         } else {
             return res.json({"company": query.rows[0]});
         }
+
     } catch(err){
         return next(err)
     }
@@ -113,3 +116,26 @@ router.put("/:code", async function (req, res, next) {
  * DELETE /companies/[code] : Deletes company. Should return 404 if company cannot be found.
  * Returns {status: "deleted"}
 */
+
+router.delete("/:code", async function (req, res, next) {
+    try {
+        let code = req.params.code;
+        const query = await db.query(
+            `DELETE FROM companies
+            WHERE code=$1
+            RETURNING code`,
+            [code]
+        );
+
+        if(!query.rows.length){
+            throw new ExpressError(`Invalid company: ${code}`, 404)
+        } else {
+            return res.json({"status": "deleted"});
+        }
+
+    } catch (err) {
+        return next(err)
+    }
+})
+
+module.exports = router;
